@@ -450,19 +450,17 @@ class NetworkManager(manager.Manager):
     def _get_networks_for_instance(self, context, instance_id, project_id,
                                    requested_networks=None):
         """Determine & return which networks an instance should connect to."""
-        # TODO(tr3buchet) maybe this needs to be updated in the future if
-        #                 there is a better way to determine which networks
-        #                 a non-vlan instance should connect to
-        if requested_networks is not None and len(requested_networks) != 0:
-            network_uuids = [request.network_id
-                             for request in requested_networks]
-            networks = self._get_networks_by_uuids(context, network_uuids)
-        else:
-            try:
-                networks = objects.NetworkList.get_all(context)
-            except exception.NoNetworksFound:
-                return []
-        # return only networks which are not vlan networks
+        # NOTE(thangp): Since we have a mixed config (neutron and
+        # nova-network), lets just gather a list of all networks available on
+        # nova-network here.
+
+        # NOTE(thangp): This only applies to VMware compute nodes.
+        try:
+            networks = objects.NetworkList.get_all(context)
+        except exception.NoNetworksFound:
+            return []
+
+        # Return only networks which are not vlan networks
         return [network for network in networks if not network.vlan]
 
     def allocate_for_instance(self, context, **kwargs):
