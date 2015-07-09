@@ -28,6 +28,7 @@ terminating it.
 import base64
 import contextlib
 import functools
+import os
 import socket
 import sys
 import time
@@ -6268,8 +6269,11 @@ class ComputeManager(manager.Manager):
             return
 
         # Determine what other nodes use this storage
-        storage_users.register_storage_use(CONF.instances_path, CONF.host)
-        nodes = storage_users.get_storage_users(CONF.instances_path)
+        # NOTE(thangp): We need to use a directory to cache storage usage
+        datastore_info_dir = os.path.join(CONF.instances_path, 'info')
+        utils.execute('mkdir', '-p', datastore_info_dir)
+        storage_users.register_storage_use(datastore_info_dir, CONF.host)
+        nodes = storage_users.get_storage_users(datastore_info_dir)
 
         # Filter all_instances to only include those nodes which share this
         # storage path.
